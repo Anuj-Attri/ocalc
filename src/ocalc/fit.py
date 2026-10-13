@@ -60,6 +60,9 @@ def fit_curve(ns, ys, *, exponential: bool = False) -> FitResult:
     if not candidates:
         return _inconclusive()
 
+    constant = next(item for item in candidates if item.label == "1")
+    if abs(_log_log_slope(n, y)) < 0.05 and constant.rmse < 0.25:
+        return FitResult("1", "O(1)", "high", rmse=constant.rmse)
 
     best = min(candidates, key=lambda item: item.aic)
     if best.rmse >= 0.5:
@@ -79,6 +82,25 @@ def fit_curve(ns, ys, *, exponential: bool = False) -> FitResult:
         gap = rival.aic - chosen.aic
         runner_up = rival.display
 
+    # n and n log n can trade a small AIC lead while the log-log slope still
+    # belongs to one of them. Trust the slope when the formulas are close.
+    if chosen.label != "c^n" and gap <= 4:
+        observed = _log_log_slope(n, y)
+        nearby = [
+            item
+            for item in candidates
+            if item.label != "c^n" and item.aic <= best.aic + 4
+        ]
+        slope_pick = min(nearby, key=lambda item: abs(observed - _expected_slope(item, n)))
+        if slope_pick.label != chosen.label:
+            return FitResult(
+                slope_pick.label,
+                slope_pick.display,
+                "low",
+                runner_up=chosen.display,
+                rmse=slope_pick.rmse,
+                k=slope_pick.k,
+            )
 
     confidence = _confidence(chosen.rmse, gap)
     return FitResult(
@@ -189,6 +211,31 @@ def _fit_ab(y, feature, *, constant: bool) -> tuple[float, float] | None:
     return rss, rmse
 
 
+def _expected_slope(candidate: _Candidate, n: np.ndarray) -> float:
+    """Power-law slope of log(time) against log(n) for this formula."""
+    typical = float(np.exp(np.mean(np.log(n))))
+    if candidate.label == "1":
+        return 0.0
+    if candidate.label == "log n":
+        return 1.0 / math.log(typical)
+    if candidate.label == "n":
+        return 1.0
+    if candidate.label == "n log n":
+        return 1.0 + 1.0 / math.log(typical)
+    if candidate.label == "n^2":
+        return 2.0
+    if candidate.label == "n^3":
+        return 3.0
+    if candidate.label == "n^k":
+        return float(candidate.k if candidate.k is not None else 1.0)
+    return 1.0
+
+
+def _log_log_slope(n, y) -> float:
+    log_n = np.log(n)
+    design = np.column_stack([np.ones_like(log_n), log_n])
+    coefficient, *_ = np.linalg.lstsq(design, np.log(y), rcond=None)
+    return float(coefficient[1])
 
 
 def _confidence(rmse: float, gap: float) -> str:
