@@ -115,7 +115,41 @@ def _candidates(n: np.ndarray, y: np.ndarray) -> list[_Candidate]:
         if item is not None:
             found.append(item)
 
+    polynomial = _best_parameter(
+        n,
+        y,
+        label="n^k",
+        values=[float(k) for k in np.arange(0.5, 8.01, 0.25) if all(abs(k - known) >= 0.2 for known in (1, 2, 3))],
+        feature=lambda k: n**k,
+    )
+    if polynomial is not None:
+        found.append(polynomial)
+
+    if float(np.max(n)) <= 60:
+        bases = [float(c) for c in np.linspace(0.02, 2.0, 80)]
+        bases.append(math.log(2))
+        exponential = _best_parameter(
+            n,
+            y,
+            label="c^n",
+            values=bases,
+            feature=lambda c: np.exp(c * n),
+        )
+        if exponential is not None:
+            found.append(exponential)
     return found
+
+
+def _best_parameter(n, y, *, label, values, feature) -> _Candidate | None:
+    best = None
+    for value in values:
+        column = np.asarray(feature(value), dtype=float)
+        if not np.isfinite(column).all() or np.max(np.abs(column)) > 1e14:
+            continue
+        item = _score(y, column, label, 3, constant=False, k=float(value))
+        if item is not None and (best is None or item.aic < best.aic):
+            best = item
+    return best
 
 
 def _score(y, feature, label, params, *, constant, k) -> _Candidate | None:
