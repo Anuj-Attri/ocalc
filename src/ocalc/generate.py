@@ -111,6 +111,28 @@ def plan_inputs(func, sample_args=(), sample_kwargs=None) -> InputPlan:
     return _plan_from_slots(tuple(args), kwargs, slots)
 
 
+def load_function(file, qualname: str):
+    """Import a function or method from a Python file by its qualname."""
+    path = Path(file).resolve()
+    if not path.is_file():
+        raise FileNotFoundError(f"No such file: {path}")
+    parent = str(path.parent)
+    if parent not in sys.path:
+        sys.path.insert(0, parent)
+    module_name = f"ocalc_target_{path.stem}"
+    spec = importlib.util.spec_from_file_location(module_name, path)
+    if spec is None or spec.loader is None:
+        raise FunctionNotFound(f"Cannot import {path.name}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    obj = module
+    for part in qualname.split("."):
+        if not hasattr(obj, part):
+            raise FunctionNotFound(f"Cannot find {qualname} in {path.name}")
+        obj = getattr(obj, part)
+    if not callable(obj):
+        raise FunctionNotFound(f"{qualname} is not callable")
+    return obj
 
 
 
@@ -118,6 +140,18 @@ def plan_inputs(func, sample_args=(), sample_kwargs=None) -> InputPlan:
 
 
 
+
+
+def callable_location(func) -> tuple[str | None, str | None]:
+    """Return the file and qualname when the function can be re-imported."""
+    code = getattr(func, "__code__", None)
+    if code is None:
+        return None, None
+    path = code.co_filename
+    qualname = getattr(func, "__qualname__", "")
+    if not path or path.startswith("<") or "<" in qualname:
+        return None, None
+    return path, qualname
 
 
 @dataclass(frozen=True)
