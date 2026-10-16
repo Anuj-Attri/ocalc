@@ -220,8 +220,25 @@ def _parameters(func):
 def _assign(parameters, sample_args, sample_kwargs) -> dict:
     assigned = dict(sample_kwargs)
     positional = [param for param in parameters if param.kind != inspect.Parameter.KEYWORD_ONLY]
-    for param, value in zip(positional, sample_args):
-        assigned[param.name] = value
+    skipped = []
+    index = 0
+    for param in positional:
+        if param.name in assigned or index >= len(sample_args):
+            continue
+        value = sample_args[index]
+        index += 1
+        if _compatible(param, value):
+            assigned[param.name] = value
+        else:
+            skipped.append(value)
+    for param in parameters:
+        if param.name in assigned:
+            continue
+        for position, value in enumerate(skipped):
+            if _compatible(param, value):
+                assigned[param.name] = value
+                del skipped[position]
+                break
     return assigned
 
 
