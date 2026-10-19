@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import ast
+import copy
 import importlib.util
 import inspect
 import re
@@ -35,6 +36,7 @@ class InputPlan:
     args: tuple = ()
     kwargs: dict = field(default_factory=dict)
     kind: str = ""
+    prototype: Any = None
 
     def build(self, n: int) -> tuple[tuple, dict]:
         if self.mode == "constant":
@@ -43,6 +45,8 @@ class InputPlan:
         kwargs = dict(self.kwargs)
         if self.mode == "int_n":
             value: Any = int(n)
+        elif _is_structured(self.prototype):
+            value = _scale_structured(self.prototype, int(n))
         else:
             value = _materialize(self.kind, int(n))
         if self.key is not None:
@@ -109,7 +113,12 @@ def plan_inputs(func, sample_args=(), sample_kwargs=None) -> InputPlan:
         slots.append(
             _Slot(where, kind, _int_like(param, value, kind), param.default is not inspect.Parameter.empty)
         )
-    return _plan_from_slots(tuple(args), kwargs, slots)
+    plan = _plan_from_slots(tuple(args), kwargs, slots)
+    if plan.mode == "sized":
+        current = plan.kwargs[plan.key] if plan.key is not None else plan.args[plan.index]
+        if _is_structured(current):
+            plan.prototype = current
+    return plan
 
 
 def load_function(file, qualname: str):
@@ -117,15 +126,21 @@ def load_function(file, qualname: str):
     path = Path(file).resolve()
     if not path.is_file():
         raise FileNotFoundError(f"No such file: {path}")
-    parent = str(path.parent)
-    if parent not in sys.path:
-        sys.path.insert(0, parent)
-    module_name = f"ocalc_target_{path.stem}"
+    module_name, root = _import_target(path)
+    root_text = str(root)
+    if root_text not in sys.path:
+        sys.path.insert(0, root_text)
+    _drop_stale_module(module_name, path)
     spec = importlib.util.spec_from_file_location(module_name, path)
     if spec is None or spec.loader is None:
         raise FunctionNotFound(f"Cannot import {path.name}")
     module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
+    sys.modules[module_name] = module
+    try:
+        spec.loader.exec_module(module)
+    except Exception as exc:
+        sys.modules.pop(module_name, None)
+        raise RuntimeError(f"Could not import {path.name}: {type(exc).__name__}: {exc}") from exc
     obj = module
     for part in qualname.split("."):
         if not hasattr(obj, part):
@@ -136,11 +151,69 @@ def load_function(file, qualname: str):
     return _bind_method(obj)
 
 
+def _import_target(path: Path) -> tuple[str, Path]:
+    """Return the import name and the directory that must be on sys.path."""
+    parts = [path.stem]
+    folder = path.parent
+    while (folder / "__init__.py").is_file() and folder != folder.parent:
+        parts.append(folder.name)
+        folder = folder.parent
+    if len(parts) == 1:
+        return f"ocalc_target_{path.stem}", path.parent
+    return ".".join(reversed(parts)), folder
 
 
+def _drop_stale_module(module_name: str, path: Path) -> None:
+    existing = sys.modules.get(module_name)
+    existing_file = getattr(existing, "__file__", None)
+    if existing_file and Path(existing_file).resolve() == path:
+        return
+    if existing is None:
+        return
+    prefix = module_name.split(".", 1)[0]
+    for name in list(sys.modules):
+        if name == prefix or name.startswith(prefix + "."):
+            sys.modules.pop(name, None)
 
 
+def _is_scalar(value) -> bool:
+    return value is None or isinstance(value, (str, bytes, bytearray, int, float, bool))
 
+
+def _is_structured(value) -> bool:
+    if isinstance(value, (list, tuple)):
+        return any(not _is_scalar(item) for item in value)
+    if isinstance(value, dict):
+        return bool(value) and any(not _is_scalar(item) for item in value.values())
+    return False
+
+
+def _scale_structured(value, n: int):
+    """Repeat a real sample until it has n items, keeping each record's shape."""
+    if isinstance(value, dict):
+        items = list(value.items())
+        if n <= len(items):
+            return {key: copy.deepcopy(item) for key, item in items[:n]}
+        grown = {}
+        for index in range(n):
+            key, item = items[index % len(items)]
+            candidate = key if index < len(items) else _extended_key(key, index)
+            while candidate in grown:
+                candidate = _extended_key(candidate, index + 1)
+            grown[candidate] = copy.deepcopy(item)
+        return grown
+    copies = [copy.deepcopy(value[index % len(value)]) for index in range(n)]
+    if isinstance(value, tuple):
+        return tuple(copies)
+    return copies
+
+
+def _extended_key(key, index):
+    if isinstance(key, str):
+        return f"{key}#{index}"
+    if _is_int(key):
+        return key + index + 1
+    return (index, key)
 
 
 def callable_location(func) -> tuple[str | None, str | None]:
