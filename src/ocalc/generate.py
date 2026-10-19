@@ -77,6 +77,7 @@ def parse_sample(text: str) -> tuple[tuple, dict]:
 
 def plan_inputs(func, sample_args=(), sample_kwargs=None) -> InputPlan:
     """Build a call from the signature, then choose which argument grows with n."""
+    func = _bind_method(func)
     parameters = _parameters(func)
     if parameters and parameters[0].name in {"self", "cls"}:
         raise NeedSample(
@@ -132,7 +133,7 @@ def load_function(file, qualname: str):
         obj = getattr(obj, part)
     if not callable(obj):
         raise FunctionNotFound(f"{qualname} is not callable")
-    return obj
+    return _bind_method(obj)
 
 
 
@@ -199,6 +200,41 @@ def _split_top_level(text: str) -> list[str]:
     return parts
 
 
+def _bind_method(func):
+    """Return a bound method when the class can be constructed with no arguments."""
+    if inspect.ismethod(func) or not inspect.isfunction(func):
+        return func
+    try:
+        parameters = list(inspect.signature(func).parameters)
+    except (TypeError, ValueError):
+        return func
+    if not parameters or parameters[0] not in {"self", "cls"} or "." not in func.__qualname__:
+        return func
+    owner = _lookup_owner(func)
+    if not isinstance(owner, type):
+        return func
+    if parameters[0] == "cls":
+        return getattr(owner, func.__name__)
+    try:
+        instance = owner()
+    except Exception as exc:
+        raise NeedSample(
+            f"Cannot construct {owner.__name__}() to measure {func.__qualname__}. "
+            "Use a class that can be built with no arguments, or measure a plain function."
+        ) from exc
+    return getattr(instance, func.__name__)
+
+
+def _lookup_owner(func):
+    parent: Any = func.__globals__
+    for part in func.__qualname__.split(".")[:-1]:
+        if isinstance(parent, dict):
+            parent = parent.get(part)
+        else:
+            parent = getattr(parent, part, None)
+        if parent is None:
+            return None
+    return parent
 
 
 def _parameters(func):
