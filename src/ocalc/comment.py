@@ -100,6 +100,14 @@ def format_comment(
     return "# ocalc: " + "; ".join(parts)
 
 
+def format_metrics(comment: str) -> str:
+    """One field per line, for the terminal and the MCP reply."""
+    body = comment.strip()
+    prefix = "# ocalc:"
+    if body.startswith(prefix):
+        body = body[len(prefix) :].strip()
+    return "\n".join(part.strip() for part in body.split(";") if part.strip())
+
 
 def format_table(points) -> str:
     lines = [f"{'n':>10}  {'time':>12}  {'memory':>12}"]
@@ -111,6 +119,112 @@ def format_table(points) -> str:
     return "\n".join(lines)
 
 
+def parse_comment(line: str) -> ParsedComment | None:
+    if "ocalc:" not in line:
+        return None
+    worst = _WORST.search(line)
+    worst_s = None
+    if worst is not None:
+        worst_s = float(worst.group(1)) * _SCALES[worst.group(2)]
+    protocol = None
+    found = _PROTOCOL.search(line)
+    if found is not None:
+        if found.group("cbudget") is not None:
+            protocol = Protocol(
+                0,
+                0,
+                0,
+                float(found.group("cbudget")),
+                constant=True,
+                repeats=int(found.group("crepeats") or 5),
+            )
+        else:
+            protocol = Protocol(
+                int(found.group("min_n")),
+                int(found.group("max_n")),
+                int(found.group("measures")),
+                float(found.group("budget")),
+                repeats=int(found.group("repeats") or 5),
+            )
+    return ParsedComment(worst_s, protocol)
 
 
+def apply_comment(source: str, qualname: str, comment: str) -> str:
+    """Insert or replace the ocalc comment directly above a function."""
+    newline = "\r\n" if "\r\n" in source else "\n"
+    lines = source.splitlines()
+    try:
+        tree = ast.parse(source)
+    except SyntaxError as exc:
+        raise FunctionNotFound(f"Cannot parse the file: {exc}") from exc
+    node = _find_function(tree, qualname)
+    if node is None:
+        raise FunctionNotFound(f"Cannot find {qualname}")
+    insert_at = node.lineno
+    if node.decorator_list:
+        insert_at = min(decorator.lineno for decorator in node.decorator_list)
+    indent = re.match(r"[ \t]*", lines[node.lineno - 1]).group(0)
+    content = comment.strip()
+    if not content.startswith("#"):
+        content = "# ocalc: " + content
+    new_line = indent + content.lstrip()
+    slot = insert_at - 2
+    while slot >= 0 and lines[slot].strip() == "":
+        slot -= 1
+    if slot >= 0 and lines[slot].lstrip().startswith("# ocalc:"):
+        lines[slot] = new_line
+    else:
+        lines.insert(insert_at - 1, new_line)
+    text = newline.join(lines)
+    if source.endswith(("\n", "\r\n")):
+        text += newline
+    return text
 
+
+def existing_comment(source: str, qualname: str) -> ParsedComment | None:
+    """Read the ocalc comment already sitting above a function, if there is one."""
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return None
+    node = _find_function(tree, qualname)
+    if node is None:
+        return None
+    lines = source.splitlines()
+    insert_at = node.lineno
+    if node.decorator_list:
+        insert_at = min(decorator.lineno for decorator in node.decorator_list)
+    slot = insert_at - 2
+    while slot >= 0 and lines[slot].strip() == "":
+        slot -= 1
+    if slot < 0 or not lines[slot].lstrip().startswith("# ocalc:"):
+        return None
+    return parse_comment(lines[slot])
+
+
+def _find_function(tree: ast.AST, qualname: str):
+    found = {}
+
+    class Finder(ast.NodeVisitor):
+        def __init__(self):
+            self.stack: list[str] = []
+
+        def visit_ClassDef(self, node: ast.ClassDef):
+            self.stack.append(node.name)
+            self.generic_visit(node)
+            self.stack.pop()
+
+        def visit_FunctionDef(self, node: ast.FunctionDef):
+            self._function(node)
+
+        def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef):
+            self._function(node)
+
+        def _function(self, node):
+            self.stack.append(node.name)
+            found[".".join(self.stack)] = node
+            self.generic_visit(node)
+            self.stack.pop()
+
+    Finder().visit(tree)
+    return found.get(qualname)
