@@ -95,6 +95,19 @@ def benchmark(
     started = time.perf_counter()
 
     for size in sizes:
+        remaining = budget - (time.perf_counter() - started)
+        if remaining <= 0.05:
+            break
+        if len(points) >= 2 and _explosive(
+            points[-2].n, points[-2].time_s, points[-1].n, points[-1].time_s
+        ):
+            exponential = True
+            break
+        if points:
+            ratio = size / points[-1].n
+            predicted = points[-1].time_s * max(ratio, 1.0) ** 2
+            if predicted > remaining:
+                break
         args, kwargs = plan.build(size)
         status, times, peak = _measure_call(
             func,
@@ -103,11 +116,29 @@ def benchmark(
             file=file,
             qualname=qualname,
             repeats=repeats,
-            timeout=budget,
+            timeout=max(0.2, remaining),
         )
+        if status == "timeout":
+            timed_out = True
+            if points and (
+                points[-1].n <= 40
+                and points[-1].time_s > 1e-4
+                or (
+                    len(points) >= 2
+                    and _explosive(points[-2].n, points[-2].time_s, points[-1].n, points[-1].time_s)
+                )
+            ):
+                exponential = True
+            break
         if status == "error":
             raise RuntimeError(times)
-        points.append(Point(size, float(median(times)), float(peak)))
+        point = Point(size, float(median(times)), float(peak))
+        points.append(point)
+        if len(points) >= 2 and _explosive(
+            points[-2].n, points[-2].time_s, points[-1].n, points[-1].time_s
+        ):
+            exponential = True
+            break
 
     if not points:
         raise RuntimeError(
@@ -156,6 +187,18 @@ def _benchmark_constant(func, plan, budget, repeats, file, qualname) -> BenchRes
         worst_n=None,
     )
 
+
+def _explosive(n0, t0, n1, t1) -> bool:
+    if t0 <= 0 or t1 <= 0 or n1 <= n0:
+        return False
+    n_ratio = n1 / n0
+    t_ratio = t1 / t0
+    if n_ratio < 1.5 and t_ratio > 2 and n1 <= 64 and t1 > 1e-4:
+        return True
+    if t1 < 1e-3 or n_ratio <= 1:
+        return False
+    exponent = math.log(t_ratio) / math.log(n_ratio)
+    return exponent > 5
 
 
 def _call(func, args, kwargs):
