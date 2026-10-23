@@ -209,6 +209,8 @@ def _call(func, args, kwargs):
 
 
 def _measure_call(func, args, kwargs, *, file, qualname, repeats, timeout):
+    if file and qualname:
+        return _run_process(file, qualname, args, kwargs, repeats, timeout)
     times, peak = collect_sample(func, args, kwargs, repeats)
     return "ok", times, peak
 
@@ -244,4 +246,42 @@ def collect_sample(func, args, kwargs, repeats: int = _REPEATS):
     return times, float(peak)
 
 
+def _run_process(file, qualname, args, kwargs, repeats, timeout):
+    context = multiprocessing.get_context("spawn")
+    parent, child = context.Pipe(duplex=False)
+    process = context.Process(
+        target=_worker,
+        args=(child, str(file), qualname, args, kwargs, repeats),
+        daemon=True,
+    )
+    process.start()
+    child.close()
+    try:
+        process.join(timeout)
+        if process.is_alive():
+            process.terminate()
+            process.join()
+            return "timeout", None, None
+        if not parent.poll(0.2):
+            return "error", "The measurement process stopped without a result.", None
+        message = parent.recv()
+    finally:
+        parent.close()
+    if not message or message[0] != "ok":
+        detail = message[1] if message and len(message) > 1 else "measurement failed"
+        return "error", detail, None
+    return "ok", message[1], message[2]
 
+
+def _worker(conn, file, qualname, args, kwargs, repeats):
+    try:
+        func = load_function(file, qualname)
+        times, peak = collect_sample(func, args, kwargs, repeats)
+        conn.send(("ok", times, peak))
+    except Exception as exc:
+        try:
+            conn.send(("err", f"{type(exc).__name__}: {exc}"))
+        except Exception:
+            pass
+    finally:
+        conn.close()
