@@ -10,6 +10,8 @@ import numpy as np
 from ocalc.bench import BenchResult, Point, benchmark
 from ocalc.comment import (
     Protocol,
+    apply_comment,
+    existing_comment,
     format_comment,
     format_table,
 )
@@ -29,6 +31,7 @@ __all__ = [
     "FunctionNotFound",
     "NeedSample",
     "Report",
+    "annotate_file",
     "measure",
     "parse_sample",
 ]
@@ -114,6 +117,43 @@ def measure(
         protocol=result.protocol,
     )
 
+
+def annotate_file(
+    path,
+    qualname: str,
+    *sample_args,
+    budget: float | None = None,
+    min_n: int | None = None,
+    max_n: int | None = None,
+    measures: int | None = None,
+    repeats: int | None = None,
+    **sample_kwargs,
+) -> Report:
+    """Benchmark a function in a file and write the comment above it."""
+    file_path = Path(path)
+    source = file_path.read_text(encoding="utf-8")
+    previous = existing_comment(source, qualname)
+    protocol = previous.protocol if previous is not None else None
+    previous_s = previous.worst_s if previous is not None else None
+    func = load_function(file_path, qualname)
+    report = measure(
+        func,
+        *sample_args,
+        budget=budget,
+        min_n=min_n,
+        max_n=max_n,
+        measures=measures,
+        repeats=repeats,
+        file=str(file_path.resolve()),
+        qualname=qualname,
+        protocol=protocol,
+        previous_s=previous_s,
+        **sample_kwargs,
+    )
+    updated = apply_comment(source, qualname, report.comment)
+    with file_path.open("w", encoding="utf-8", newline="") as handle:
+        handle.write(updated)
+    return report
 
 
 def _fits(result: BenchResult) -> tuple[FitResult, FitResult]:
