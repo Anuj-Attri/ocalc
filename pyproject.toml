@@ -12,6 +12,7 @@ license-files = ["LICENSE"]
 dependencies = ["numpy"]
 
 [project.optional-dependencies]
+mcp = ["mcp>=1.2"]
 dev = ["pytest"]
 
 [project.scripts]
