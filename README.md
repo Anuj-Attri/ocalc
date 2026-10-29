@@ -41,9 +41,19 @@ ocalc annotate FILE -f two_sum --sample "[1, 2, 3], 9"
 
 `measure` prints the size table and the comment. `annotate` writes the comment above the function and replaces an older ocalc comment. Nothing runs because a file was saved. You ask, then the tool runs.
 
+Protocol flags, with their defaults:
+
+```bash
+ocalc measure FILE -f two_sum --sample "[1, 2, 3], 9" --min-n 100 --max-n 20000 --measures 6 --budget 3 --repeats 3
+```
+
+`--budget` is seconds to spend (5). `--min-n` and `--max-n` are the size grid (100 and 100000, or 8 and 100000 when the only input is an int). `--measures` is how many sizes to try (8). `--repeats` is how many timed calls to make at each size (5). A later annotate reuses the protocol stored in the comment unless you pass a flag.
+
 The first list, tuple, set, dict, or bytes argument grows with `n`. A lone string grows when it is the input. A single int, as in `fib(n)`, is `n`. Other arguments stay at the sample or the type hint. Keyword arguments are written `factor=3`. A sample that does not match a hint is not forced into that parameter: `add(nums: list[int], b: int)` with `--sample "1, 9"` still grows a list and keeps an int.
 
 `--sample` accepts Python literals only. It is not executed as code. A function with nothing to grow is called as written and reported as `O(1)`. Methods are measured when the class can be constructed with no arguments. `async def` functions are awaited.
+
+A list of numbers becomes `0 .. n-1`. A sample of records, such as a list of dicts, is copied until it has `n` items, and each copy keeps the sample's keys and nested values. A file inside a package is imported as that package, so relative imports keep working. Code under `if __name__ == "__main__"` does not run. The measurement runs on the machine where you invoke `ocalc`. The test suite runs on GitHub Actions.
 
 ## Python
 
