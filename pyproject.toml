@@ -6,10 +6,21 @@ build-backend = "setuptools.build_meta"
 name = "ocalc"
 version = "0.1.0"
 description = "Measure a Python function and comment its time and space complexity."
+readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
 license-files = ["LICENSE"]
+keywords = ["complexity", "benchmark", "big-o", "profiling"]
 dependencies = ["numpy"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+    "Topic :: Software Development :: Testing",
+]
+
+[project.urls]
+Homepage = "https://github.com/Anuj-Attri/ocalc"
+Repository = "https://github.com/Anuj-Attri/ocalc"
 
 [project.optional-dependencies]
 mcp = ["mcp>=1.2"]
