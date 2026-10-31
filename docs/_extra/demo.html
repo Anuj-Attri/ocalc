@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ocalc demo</title>
+  <link rel="stylesheet" href="demo.css" />
+</head>
+<body>
+  <header class="top">
+    <a class="brand" href="./">ocalc</a>
+    <nav>
+      <a href="./">Docs</a>
+      <a href="https://github.com/Anuj-Attri/ocalc">GitHub</a>
+    </nav>
+  </header>
+  <main>
+    <section class="intro">
+      <h1>Analyze a snippet</h1>
+      <p>Drop in source from any language. ocalc reads the control flow and estimates the time and space class.</p>
+    </section>
+    <section class="workspace">
+      <div class="editor">
+        <div class="toolbar">
+          <label class="file">
+            Open file
+            <input id="file" type="file" accept=".py,.js,.ts,.jsx,.tsx,.java,.c,.h,.cpp,.cc,.go,.rs,.rb,.kt,.swift,.cs,.php,.scala,.txt" />
+          </label>
+          <span id="language" class="pill">python</span>
+        </div>
+        <textarea id="code" spellcheck="false">def pairs(rows):
+    count = 0
+    for row in rows:
+        for value in row:
+            count += 1
+    return count
+</textarea>
+        <div class="samples">
+          <button type="button" data-sample="python">Python</button>
+          <button type="button" data-sample="javascript">JavaScript</button>
+          <button type="button" data-sample="go">Go</button>
+          <button type="button" data-sample="search">Binary search</button>
+        </div>
+      </div>
+      <aside class="report" aria-live="polite">
+        <p class="label">Time</p>
+        <p id="time" class="value">O(n^2)</p>
+        <p class="label">Space</p>
+        <p id="space" class="value">O(1)</p>
+        <p id="detail" class="detail"></p>
+      </aside>
+    </section>
+  </main>
+  <script src="analyze.js"></script>
+  <script src="demo.js"></script>
+</body>
+</html>

@@ -1,7 +1,7 @@
 ocalc
 =====
 
-``ocalc`` measures a Python function and writes a one-line estimate of its time and space complexity.
+``ocalc`` estimates the time and space complexity of a function. Paste a snippet in any language on the `demo <demo.html>`_, or measure a Python function by running it.
 
 .. code-block:: python
 

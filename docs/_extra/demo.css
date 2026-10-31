@@ -1,0 +1,132 @@
+:root {
+  color: #1c1917;
+  background: #f6f3ee;
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+.top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.1rem 1.5rem;
+  border-bottom: 1px solid #e4ddd2;
+}
+
+.brand {
+  color: inherit;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+}
+
+nav a {
+  color: #57534e;
+  margin-left: 1rem;
+  text-decoration: none;
+}
+
+main {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+}
+
+h1 {
+  font-size: 2.4rem;
+  font-weight: 600;
+  margin: 0 0 0.4rem;
+}
+
+.intro p {
+  margin: 0 0 1.5rem;
+  color: #44403c;
+  font-size: 1.15rem;
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: 1.5fr 0.8fr;
+  gap: 1rem;
+}
+
+.editor, .report {
+  background: #fffdf9;
+  border: 1px solid #e4ddd2;
+  border-radius: 12px;
+}
+
+.toolbar, .samples {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.7rem 0.8rem;
+}
+
+.file {
+  border: 1px solid #d6d3d1;
+  border-radius: 999px;
+  padding: 0.35rem 0.8rem;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.file input { display: none; }
+
+.pill {
+  margin-left: auto;
+  color: #78716c;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.85rem;
+}
+
+textarea {
+  width: 100%;
+  min-height: 320px;
+  border: 0;
+  border-top: 1px solid #f0ebe3;
+  border-bottom: 1px solid #f0ebe3;
+  resize: vertical;
+  padding: 1rem;
+  font: 0.95rem/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  background: transparent;
+  color: inherit;
+}
+
+.samples button {
+  border: 0;
+  background: #f3eee6;
+  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.report { padding: 1.2rem 1.3rem; }
+
+.label {
+  margin: 0.8rem 0 0;
+  color: #78716c;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+}
+
+.value {
+  margin: 0.15rem 0 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 2rem;
+}
+
+.detail { color: #57534e; }
+
+@media (max-width: 800px) {
+  .workspace { grid-template-columns: 1fr; }
+  h1 { font-size: 2rem; }
+}

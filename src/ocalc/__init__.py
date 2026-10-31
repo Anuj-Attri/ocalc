@@ -24,6 +24,7 @@ from ocalc.generate import (
     parse_sample,
     plan_inputs,
 )
+from ocalc.static import SourceAnalysis, analyze_source
 
 __version__ = "0.1.0"
 
@@ -31,6 +32,8 @@ __all__ = [
     "FunctionNotFound",
     "NeedSample",
     "Report",
+    "SourceAnalysis",
+    "analyze_source",
     "annotate_file",
     "measure",
     "parse_sample",

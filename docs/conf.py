@@ -33,6 +33,7 @@ napoleon_numpy_docstring = False
 html_theme = "pytorch_sphinx_theme2"
 html_title = "ocalc"
 html_static_path = []
+html_extra_path = ["_extra"]
 html_theme_options = {
     "pytorch_project": "docs",
     "logo": {"text": "ocalc"},

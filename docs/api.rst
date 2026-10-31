@@ -1,6 +1,8 @@
 API
 ===
 
+.. autofunction:: ocalc.analyze_source
+
 .. autofunction:: ocalc.measure
 
 .. autofunction:: ocalc.annotate_file
