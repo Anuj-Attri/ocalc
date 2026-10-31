@@ -3,55 +3,77 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ocalc demo</title>
+  <title>ocalc</title>
   <link rel="stylesheet" href="demo.css" />
 </head>
 <body>
-  <header class="top">
+  <header class="bar">
     <a class="brand" href="./">ocalc</a>
-    <nav>
-      <a href="./">Docs</a>
-      <a href="https://github.com/Anuj-Attri/ocalc">GitHub</a>
-    </nav>
+    <label>Language
+      <select id="language">
+        <option value="auto">Auto</option>
+        <option value="python">Python</option>
+        <option value="javascript">JavaScript</option>
+        <option value="typescript">TypeScript</option>
+        <option value="java">Java</option>
+        <option value="c">C</option>
+        <option value="cpp">C++</option>
+        <option value="csharp">C#</option>
+        <option value="go">Go</option>
+        <option value="rust">Rust</option>
+        <option value="ruby">Ruby</option>
+        <option value="php">PHP</option>
+        <option value="kotlin">Kotlin</option>
+        <option value="swift">Swift</option>
+        <option value="scala">Scala</option>
+        <option value="lua">Lua</option>
+      </select>
+    </label>
+    <label>Example
+      <select id="example"></select>
+    </label>
+    <label class="file">Open
+      <input id="file" type="file" />
+    </label>
+    <span class="grow"></span>
+    <a href="./">Docs</a>
+    <a href="https://github.com/Anuj-Attri/ocalc">GitHub</a>
   </header>
-  <main>
-    <section class="intro">
-      <h1>Analyze a snippet</h1>
-      <p>Drop in source from any language. ocalc reads the control flow and estimates the time and space class.</p>
-    </section>
-    <section class="workspace">
-      <div class="editor">
-        <div class="toolbar">
-          <label class="file">
-            Open file
-            <input id="file" type="file" accept=".py,.js,.ts,.jsx,.tsx,.java,.c,.h,.cpp,.cc,.go,.rs,.rb,.kt,.swift,.cs,.php,.scala,.txt" />
-          </label>
-          <span id="language" class="pill">python</span>
+  <div class="workspace">
+    <div class="editor-pane">
+      <div id="editor"></div>
+      <footer class="status">
+        <span id="cursor">Ln 1, Col 1</span>
+        <span id="detected"></span>
+        <span>Tab indents · Shift+Tab outdents</span>
+      </footer>
+    </div>
+    <aside class="report" aria-live="polite">
+      <h1>Worst case</h1>
+      <div class="metrics">
+        <div>
+          <span class="k">Time</span>
+          <strong id="time">…</strong>
+          <span id="time-meta" class="meta"></span>
         </div>
-        <textarea id="code" spellcheck="false">def pairs(rows):
-    count = 0
-    for row in rows:
-        for value in row:
-            count += 1
-    return count
-</textarea>
-        <div class="samples">
-          <button type="button" data-sample="python">Python</button>
-          <button type="button" data-sample="javascript">JavaScript</button>
-          <button type="button" data-sample="go">Go</button>
-          <button type="button" data-sample="search">Binary search</button>
+        <div>
+          <span class="k">Space</span>
+          <strong id="space">…</strong>
+          <span id="space-meta" class="meta"></span>
         </div>
       </div>
-      <aside class="report" aria-live="polite">
-        <p class="label">Time</p>
-        <p id="time" class="value">O(n^2)</p>
-        <p class="label">Space</p>
-        <p id="space" class="value">O(1)</p>
-        <p id="detail" class="detail"></p>
-      </aside>
-    </section>
-  </main>
+      <table>
+        <caption>Functions in this file</caption>
+        <thead>
+          <tr><th>Function</th><th>Time</th><th>Space</th><th>Why</th></tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+      <p class="note">The classes above are the worst case in this file, read from loops, recursion, and calls such as matrix products and sorts.</p>
+    </aside>
+  </div>
+  <p id="boot" class="boot">Loading editor…</p>
   <script src="analyze.js"></script>
-  <script src="demo.js"></script>
+  <script type="module" src="demo.js"></script>
 </body>
 </html>

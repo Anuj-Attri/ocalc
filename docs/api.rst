@@ -3,6 +3,12 @@ API
 
 .. autofunction:: ocalc.analyze_source
 
+.. autoclass:: ocalc.SourceAnalysis
+   :members:
+
+.. autoclass:: ocalc.FunctionEstimate
+   :members:
+
 .. autofunction:: ocalc.measure
 
 .. autofunction:: ocalc.annotate_file

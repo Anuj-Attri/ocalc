@@ -21,7 +21,7 @@ ocalc measure FILE -f two_sum --sample "[1, 2, 3], 9"
 ocalc annotate FILE -f two_sum --sample "[1, 2, 3], 9"
 ```
 
-Try a snippet in any language on the [demo](https://anuj-attri.github.io/ocalc/demo.html). The guide and API reference are at [anuj-attri.github.io/ocalc](https://anuj-attri.github.io/ocalc/).
+Try a snippet on the [demo](https://anuj-attri.github.io/ocalc/demo.html). The page reports the worst case in the file. The guide and API reference are at [anuj-attri.github.io/ocalc](https://anuj-attri.github.io/ocalc/).
 
 ## Development
 
