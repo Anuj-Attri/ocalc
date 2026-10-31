@@ -21,7 +21,7 @@ ocalc measure FILE -f two_sum --sample "[1, 2, 3], 9"
 ocalc annotate FILE -f two_sum --sample "[1, 2, 3], 9"
 ```
 
-The guide and API reference are in [`docs/`](docs/index.rst).
+The guide and API reference are at [anuj-attri.github.io/ocalc](https://anuj-attri.github.io/ocalc/).
 
 ## Development
 
