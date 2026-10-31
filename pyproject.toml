@@ -25,6 +25,7 @@ Repository = "https://github.com/Anuj-Attri/ocalc"
 [project.optional-dependencies]
 mcp = ["mcp>=1.2"]
 dev = ["pytest"]
+docs = ["sphinx>=7.2,<8", "pytorch-sphinx-theme2==0.4.13"]
 
 [project.scripts]
 ocalc = "ocalc.cli:main"

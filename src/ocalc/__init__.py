@@ -63,7 +63,25 @@ def measure(
     previous_s: float | None = None,
     **sample_kwargs,
 ) -> Report:
-    """Run a bounded benchmark and return the complexity comment plus the table rows."""
+    """Measure a function and return its complexity report.
+
+    Args:
+        func: The callable to measure.
+        sample_args: Example positional arguments. The first collection grows with ``n``.
+        budget: Seconds to spend measuring. The default is 5.
+        min_n: Smallest input size.
+        max_n: Largest input size.
+        measures: How many sizes to try.
+        repeats: Timed calls at each size.
+        file: Source file, when the callable should be re-imported for the timed run.
+        qualname: Qualname used to re-import ``file``.
+        protocol: Stored sizes and budget from an earlier comment.
+        previous_s: Worst time from that earlier comment.
+        sample_kwargs: Example keyword arguments.
+
+    Returns:
+        The comment, the size table, and the fitted time and space classes.
+    """
     plan = plan_inputs(func, sample_args, sample_kwargs)
     if protocol is not None and protocol.constant and plan.mode == "constant":
         if budget is None:
@@ -129,7 +147,25 @@ def annotate_file(
     repeats: int | None = None,
     **sample_kwargs,
 ) -> Report:
-    """Benchmark a function in a file and write the comment above it."""
+    """Benchmark a function in a file and write the comment above it.
+
+    A later call reuses the protocol stored in the existing comment and records
+    the previous worst time.
+
+    Args:
+        path: Python file that defines the function.
+        qualname: Function qualname, such as ``two_sum`` or ``Box.run``.
+        sample_args: Example positional arguments.
+        budget: Seconds to spend measuring.
+        min_n: Smallest input size.
+        max_n: Largest input size.
+        measures: How many sizes to try.
+        repeats: Timed calls at each size.
+        sample_kwargs: Example keyword arguments.
+
+    Returns:
+        The report that was written into the file.
+    """
     file_path = Path(path)
     source = file_path.read_text(encoding="utf-8")
     previous = existing_comment(source, qualname)
