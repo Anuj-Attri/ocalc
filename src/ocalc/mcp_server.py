@@ -21,8 +21,7 @@ def measure_function(
 ) -> str:
     """Benchmark a function and return its complexity comment.
 
-    The tool runs the function. It stops at the time budget and does not search
-    for adversarial inputs. Worst is the slowest completed size.
+    The tool runs the function. Worst is the slowest completed size.
 
     file: path to the Python file.
     function: qualname, for example two_sum or Box.run.

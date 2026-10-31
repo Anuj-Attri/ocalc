@@ -8,7 +8,7 @@ def two_sum(nums, target):
     ...
 ```
 
-The class is whichever of these formulas fits the measurements: `1`, `log n`, `n`, `n log n`, `n^2`, `n^3`, `n^k`, `c^n`. **Worst** is the slowest size that finished in this run, at that `n`. It is a repeatable measurement, not a proof, and it is not a search for adversarial inputs.
+The class is whichever of these formulas fits the measurements: `1`, `log n`, `n`, `n log n`, `n^2`, `n^3`, `n^k`, `c^n`. **Worst** is the slowest size that finished in this run, at that `n`.
 
 Run it again after a change. The next comment reuses the same sizes and keeps the old worst time as `Previous`, so you can see whether the function got faster on the same machine.
 
@@ -93,17 +93,9 @@ The server exposes `measure_function` and `annotate_function`. Ask the agent to 
 
 ## What the numbers mean
 
-The benchmark builds each input before the timer starts. It takes the median of a few calls at each size, stops when the next size would use up the budget, and kills a call that exceeds the time limit when the function was loaded from a file. Memory is the `tracemalloc` peak of one call, which is Python allocations, not the whole process.
+The benchmark builds each input before the timer starts. It takes the median of a few calls at each size, stops when the next size would use up the budget, and kills a call that exceeds the time limit when the function was loaded from a file. Memory is the `tracemalloc` peak of one call.
 
 Confidence is high, medium, low, or inconclusive. Low names the runner-up class. Inconclusive means too few sizes finished, or none of the formulas fit.
-
-## Limits
-
-- The tool executes the function, including side effects, imports, and loops. The timeout bounds a single call when the function lives in a file.
-- A list or dict of numbers is generated. A sample of records is repeated to length `n`. A branch that only shows up on data outside that sample will not show up here.
-- The budget can stop a slow function before the asymptotic shape is visible. The report then says the fit is inconclusive, or exponential when the time blew up while `n` was still small.
-- `tracemalloc` misses some growth that lives only on the C stack.
-- A method is measured by constructing its class with no arguments. If that constructor needs arguments, measure a plain function instead.
 
 ## Development
 
