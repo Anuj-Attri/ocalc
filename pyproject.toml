@@ -20,10 +20,12 @@ classifiers = [
 
 [project.urls]
 Homepage = "https://github.com/Anuj-Attri/ocalc"
+Documentation = "https://anuj-attri.github.io/ocalc/"
 Repository = "https://github.com/Anuj-Attri/ocalc"
+Issues = "https://github.com/Anuj-Attri/ocalc/issues"
 
 [project.optional-dependencies]
-mcp = ["mcp>=1.2"]
+mcp = ["mcp>=2,<3"]
 dev = ["pytest"]
 docs = ["sphinx>=7.2,<8", "pytorch-sphinx-theme2==0.4.13"]
 

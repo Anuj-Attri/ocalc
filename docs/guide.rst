@@ -4,19 +4,17 @@ Guide
 Install
 -------
 
-From GitHub:
+.. code-block:: bash
+
+   pip install ocalc
+
+The editor tools are a separate extra:
 
 .. code-block:: bash
 
-   pip install "git+https://github.com/Anuj-Attri/ocalc.git"
+   pip install "ocalc[mcp]"
 
 From a checkout:
-
-.. code-block:: bash
-
-   pip install -e .
-
-The core package depends on NumPy. The editor tools are optional:
 
 .. code-block:: bash
 

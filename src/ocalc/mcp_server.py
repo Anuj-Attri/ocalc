@@ -80,14 +80,29 @@ def annotate_function(
     return format_metrics(report.comment)
 
 
-def serve() -> None:
-    """Run the stdio MCP server. Requires the ocalc[mcp] extra."""
+def _server_type():
+    """The stdio server class for the installed MCP SDK.
+
+    MCP 2 renamed ``FastMCP`` to ``MCPServer``. MCP 1 still exposes ``FastMCP``.
+    """
+    try:
+        from mcp.server.mcpserver import MCPServer
+    except ImportError:
+        MCPServer = None
+    else:
+        return MCPServer
     try:
         from mcp.server.fastmcp import FastMCP
     except ImportError:
         sys.stderr.write('The MCP extra is not installed. Run: pip install "ocalc[mcp]"\n')
         raise SystemExit(1) from None
-    server = FastMCP("ocalc")
+    return FastMCP
+
+
+def serve() -> None:
+    """Run the stdio MCP server. Requires the ocalc[mcp] extra."""
+    server_type = _server_type()
+    server = server_type("ocalc")
     server.tool()(measure_function)
     server.tool()(annotate_function)
     server.run()
